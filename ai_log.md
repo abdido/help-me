@@ -106,3 +106,11 @@ Read this file before continuing work in this repository. Add a dated entry here
 - Added a soft charcoal palette with muted text, adapted surfaces, borders, badges, inputs, and hover colors for better night-time comfort.
 - The toggle icon reflects the current theme (moon in dark mode, sun in light mode); added a short icon animation and color transition, respecting reduced-motion preferences.
 - Web production build passed.
+
+## Handoff note 2026-11-17 — Recreate demo data on home PC
+
+- To recreate the deterministic demo dataset on another PC: install Node.js and PostgreSQL; create a local `.env` from `.env.example` with that PC's `DATABASE_URL`; from repository root run `npm ci`, `npm run db:generate`, `npm exec --workspace apps/api -- prisma db push --schema prisma/schema.prisma`, then `npm run db:seed`.
+- Start the API and web in separate terminals with `npm run dev:api` and `npm run dev:web`.
+- `db:seed` is destructive: it clears current users, tickets, comments, categories, and histories before recreating demo records. Use a blank/local database or data that can be replaced.
+- Current `seed.ts` creates demo users, categories, tickets, comments, and histories but does not create agent teams or route categories to teams. Admin must create teams, add agents, and map categories in the UI after seeding.
+- Local commit `c73d670` contains the current project, but no Git remote is configured yet. Push/clone via GitHub is pending the repository URL from the user. `.env` and `node_modules` were excluded from the commit.
