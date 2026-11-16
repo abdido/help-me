@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma/helpdesk-password-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  AGENT
+  USER
+  CUSTOMER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  PENDING
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketSource {
+  WEB
+  EMAIL
+  CHAT
+  API
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  firstName    String    @map("first_name")
+  lastName     String    @map("last_name")
+  role         UserRole  @default(CUSTOMER)
+  avatarUrl    String?   @map("avatar_url")
+  isActive     Boolean   @default(true) @map("is_active")
+  teamId       String?   @map("team_id")
+  team         Team?     @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  lastLogin    DateTime? @map("last_login")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  requestedTickets Ticket[]        @relation("requester")
+  assignedTickets  Ticket[]        @relation("assignee")
+  assignedCategories Category[]    @relation("categoryAssignee")
+  comments         TicketComment[]
+  historyChanges   TicketHistory[]
+  notifications    Notification[]
+  passwordResetToken PasswordResetToken?
+
+  @@index([teamId])
+
+  @@map("users")
+}
+
+model Category {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  parentId    String?    @map("parent_id")
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryTree")
+  assigneeId  String?    @map("assignee_id")
+  assignee    User?      @relation("categoryAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  teamId      String?    @map("team_id")
+  team        Team?      @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  sortOrder   Int        @default(0) @map("sort_order")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  tickets Ticket[]
+
+  @@index([teamId])
+
+  @@map("categories")
+}
+
+model Team {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  agents     User[]
+  categories Category[]
+
+  @@map("teams")
+}
+
+model Ticket {
+  id           String         @id @default(uuid())
+  ticketNumber String         @unique @map("ticket_number")
+  subject      String
+  description  String
+  status       TicketStatus   @default(OPEN)
+  priority     TicketPriority @default(MEDIUM)
+  source       TicketSource   @default(WEB)
+  requesterId  String         @map("requester_id")
+  requester    User           @relation("requester", fields: [requesterId], references: [id])
+  assigneeId   String?        @map("assignee_id")
+  assignee     User?          @relation("assignee", fields: [assigneeId], references: [id])
+  categoryId   String?        @map("category_id")
+  category     Category?      @relation(fields: [categoryId], references: [id])
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  comments TicketComment[]
+  history  TicketHistory[]
+  notifications Notification[]
+
+  @@map("tickets")
+}
+
+model TicketComment {
+  id         String   @id @default(uuid())
+  ticketId   String   @map("ticket_id")
+  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId   String   @map("author_id")
+  author     User     @relation(fields: [authorId], references: [id])
+  body       String
+  isInternal Boolean  @default(false) @map("is_internal")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("ticket_comments")
+}
+
+model TicketHistory {
+  id          String   @id @default(uuid())
+  ticketId    String   @map("ticket_id")
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  changedById String   @map("changed_by_id")
+  changedBy   User     @relation(fields: [changedById], references: [id])
+  fieldName   String   @map("field_name")
+  oldValue    String?  @map("old_value")
+  newValue    String?  @map("new_value")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("ticket_histories")
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticketId  String?   @map("ticket_id")
+  ticket    Ticket?   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}

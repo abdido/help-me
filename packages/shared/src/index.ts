@@ -7,6 +7,7 @@
 export enum UserRole {
   ADMIN = 'ADMIN',
   AGENT = 'AGENT',
+  USER = 'USER',
   CUSTOMER = 'CUSTOMER',
 }
 
@@ -42,6 +43,7 @@ export interface User {
   role: UserRole;
   avatarUrl?: string | null;
   isActive: boolean;
+  teamId?: string | null;
   lastLogin?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -60,6 +62,7 @@ export interface UpdateUserDto {
   lastName?: string;
   role?: UserRole;
   isActive?: boolean;
+  password?: string;
   avatarUrl?: string | null;
 }
 
@@ -164,6 +167,10 @@ export interface Category {
   name: string;
   description?: string | null;
   parentId?: string | null;
+  assigneeId?: string | null;
+  assignee?: Pick<User, 'id' | 'firstName' | 'lastName' | 'email' | 'isActive'> | null;
+  teamId?: string | null;
+  team?: Team | null;
   sortOrder: number;
   _count?: { tickets: number };
   children?: Category[];
@@ -174,7 +181,20 @@ export interface CreateCategoryDto {
   name: string;
   description?: string;
   parentId?: string;
+  assigneeId?: string | null;
+  teamId?: string | null;
   sortOrder?: number;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  description?: string | null;
+  agents?: User[];
+  categories?: Pick<Category, 'id' | 'name'>[];
+  _count?: { agents: number; categories: number };
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ---- Dashboard Types ----
@@ -212,7 +232,22 @@ export interface DashboardData {
   byPriority: TicketsByPriority[];
   byCategory: TicketsByCategory[];
   recentTickets: Ticket[];
+  recentTicketsMeta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
   trends: TicketTrend[];
+}
+
+export interface TicketNotification {
+  id: string;
+  title: string;
+  message: string;
+  readAt: string | null;
+  createdAt: string;
+  ticket: Pick<Ticket, 'id' | 'ticketNumber' | 'subject'> | null;
 }
 
 // ---- Pagination ----
