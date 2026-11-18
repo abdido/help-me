@@ -59,10 +59,32 @@ model User {
   historyChanges   TicketHistory[]
   notifications    Notification[]
   passwordResetToken PasswordResetToken?
+  authSessions AuthSession[]
 
   @@index([teamId])
 
   @@map("users")
+}
+
+model AuthSession {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshHash String   @map("refresh_hash")
+  expiresAt   DateTime @map("expires_at")
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_sessions")
+}
+
+model AuthRateLimit {
+  key         String   @id
+  count       Int
+  expiresAt   DateTime @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("auth_rate_limits")
 }
 
 model Category {

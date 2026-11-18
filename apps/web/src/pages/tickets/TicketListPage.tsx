@@ -178,7 +178,7 @@ export function TicketListPage() {
                       </td>
                       {user?.role === UserRole.AGENT && (
                         <td className="px-5 py-3" onClick={(event) => event.stopPropagation()}>
-                          {ticket.status === 'OPEN' && !ticket.assigneeId ? (
+                          {!ticket.assigneeId && (ticket.status === 'OPEN' || ticket.status === 'IN_PROGRESS') ? (
                             <Button size="sm" loading={claimMutation.isPending} onClick={() => claimMutation.mutate(ticket.id)}>
                               Take Ticket
                             </Button>

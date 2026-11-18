@@ -1,7 +1,8 @@
+import { queryClient } from './services/queryClient';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
 import { useAuthStore } from './stores/auth.store';
@@ -13,16 +14,6 @@ useAuthStore.getState().loadFromStorage();
 if (localStorage.getItem('helpdesk-theme') === 'dark') {
   document.documentElement.classList.add('dark');
 }
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 30_000,
-    },
-  },
-});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

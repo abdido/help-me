@@ -6,6 +6,7 @@ export const config = {
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+  trustedProxies: (process.env.TRUSTED_PROXY || '').split(',').map((proxy) => proxy.trim()).filter(Boolean),
   jwt: {
     secret: process.env.JWT_SECRET || 'dev-secret-key-change-in-production-min-32-chars!!',
     accessExpiry: process.env.JWT_ACCESS_EXPIRY || '15m',
@@ -14,6 +15,7 @@ export const config = {
   database: {
     url: process.env.DATABASE_URL || '',
   },
+  emailPasswordResetEnabled: process.env.EMAIL_PASSWORD_RESET_ENABLED === 'true',
   smtp: {
     host: process.env.SMTP_HOST || '',
     port: parseInt(process.env.SMTP_PORT || '587', 10),
@@ -39,7 +41,8 @@ if (config.nodeEnv === 'production') {
   if (!config.database.url) {
     throw new Error('DATABASE_URL is required in production');
   }
-  if (!config.smtp.host || !config.smtp.from || !process.env.PASSWORD_RESET_URL) {
-    throw new Error('SMTP_HOST, SMTP_FROM, and PASSWORD_RESET_URL are required in production');
+  if (config.emailPasswordResetEnabled &&
+      (!config.smtp.host || !config.smtp.from || !process.env.PASSWORD_RESET_URL)) {
+    throw new Error('SMTP_HOST, SMTP_FROM, and PASSWORD_RESET_URL are required for email password reset');
   }
 }

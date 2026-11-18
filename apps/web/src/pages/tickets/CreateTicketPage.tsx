@@ -33,6 +33,7 @@ export function CreateTicketPage() {
         categoryId: form.categoryId || undefined,
       }),
     onSuccess: (ticket) => {
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       toast.success('Ticket created!');
       navigate(`/tickets/${ticket.id}`);

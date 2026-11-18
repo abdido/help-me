@@ -65,6 +65,7 @@ export function TicketDetailPage() {
     mutationFn: (data: Record<string, any>) => ticketService.updateTicket(id!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ticket', id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       toast.success('Ticket updated');
     },
@@ -77,6 +78,7 @@ export function TicketDetailPage() {
     mutationFn: () => ticketService.addComment(id!, { body: commentBody, isInternal }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ticket-comments', id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
       setCommentBody('');
       setIsInternal(false);
       toast.success('Comment added');
@@ -130,7 +132,8 @@ export function TicketDetailPage() {
             <h2 className="text-xl font-bold text-gray-900">{ticket.ticketNumber}</h2>
             <Badge variant={sb.variant}>{sb.label}</Badge>
             <Badge variant={pb.variant}>{pb.label}</Badge>
-            {user?.role === UserRole.AGENT && ticket.status === TicketStatus.OPEN && !ticket.assigneeId && (
+            {user?.role === UserRole.AGENT && !ticket.assigneeId &&
+              (ticket.status === TicketStatus.OPEN || ticket.status === TicketStatus.IN_PROGRESS) && (
               <Button size="sm" loading={claimMutation.isPending} onClick={() => claimMutation.mutate()}>
                 Take Ticket
               </Button>

@@ -35,7 +35,7 @@ export function RegisterPage() {
         email: form.email,
         password: form.password,
       });
-      setAuth(res.user, res.accessToken);
+      setAuth(res.user, res.accessToken, res.refreshToken);
       toast.success('Account created!');
       navigate('/dashboard');
     } catch (err: any) {

@@ -11,6 +11,7 @@ import teamsRoutes from './modules/teams/teams.routes';
 import { config } from './config';
 
 const app = express();
+if (config.trustedProxies.length) app.set('trust proxy', config.trustedProxies);
 
 // Middleware
 app.use(cors({
@@ -26,6 +27,10 @@ app.get('/api/health', (_req, res) => {
 });
 
 // API Routes
+app.use('/api/v1', (_req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', usersRoutes);
 app.use('/api/v1/tickets', ticketsRoutes);

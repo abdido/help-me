@@ -22,6 +22,12 @@ export class AuthController {
     sendSuccess(res, result, 200, 'Token refreshed');
   }
 
+  static async logout(req: Request, res: Response) {
+    const { refreshToken } = refreshSchema.parse(req.body);
+    await AuthService.logout(refreshToken);
+    sendSuccess(res, null, 200, 'Logged out');
+  }
+
   static async forgotPassword(req: Request, res: Response) {
     const { email } = forgotPasswordSchema.parse(req.body);
     await AuthService.requestPasswordReset(email);

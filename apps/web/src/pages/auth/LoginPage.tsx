@@ -18,7 +18,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       const res = await authService.login({ email, password });
-      setAuth(res.user, res.accessToken);
+      setAuth(res.user, res.accessToken, res.refreshToken);
       toast.success('Welcome back!');
       navigate('/dashboard');
     } catch (err: any) {

@@ -114,3 +114,61 @@ Read this file before continuing work in this repository. Add a dated entry here
 - `db:seed` is destructive: it clears current users, tickets, comments, categories, and histories before recreating demo records. Use a blank/local database or data that can be replaced.
 - Current `seed.ts` creates demo users, categories, tickets, comments, and histories but does not create agent teams or route categories to teams. Admin must create teams, add agents, and map categories in the UI after seeding.
 - Local commit `c73d670` contains the current project, but no Git remote is configured yet. Push/clone via GitHub is pending the repository URL from the user. `.env` and `node_modules` were excluded from the commit.
+
+## Work completed 2026-11-17 - Session isolation and ticket numbering
+
+- Authentication checks the current database account status and role on each protected request. Access and refresh JWTs have distinct token types and require a password-derived HMAC credential version, so password replacement/reset invalidates previously issued tokens. Existing tokens require a fresh login.
+- Frontend stores the refresh token and retries authenticated requests after renewal. Session changes clear the shared React Query cache, reject stale responses from previous sessions, and synchronize other tabs through storage events.
+- Ticket creation allocates the next numeric TK number under a PostgreSQL transaction advisory lock, using the largest existing numeric suffix. Creation history is nested in the same transaction.
+- Full workspace build passed. Targeted in-process checks passed for token separation, current roles, inactive accounts, password invalidation, refresh, cache clearing, account switching, and late query completion after logout.
+- Integration verification remains pending: Prisma could not connect to localhost:5432, Windows service-manager access was denied in this session, and Docker Desktop's Linux daemon was unavailable. The three-account requester/agent/admin workflow and concurrent ticket creation have not been verified against PostgreSQL. No seed or existing database changes were performed.
+
+## Verification 2026-11-18 - PostgreSQL after PC restart
+
+- PostgreSQL at `localhost:5432` accepts connections after the user's PC restart. Verified using `pg_isready` and the application's Prisma Client with the existing `.env` configuration.
+- Connected to `helpdesk_db` on PostgreSQL 18.7; read-only counts returned 7 users and 20 tickets. No seed, schema changes, or database writes were performed.
+- The previous database connectivity blocker is resolved. Three-account workflow and concurrent ticket integration verification remain pending.
+
+## Work completed 2026-11-18 - Demo users
+
+- Added and verified 28 active users in local `helpdesk_db`: 10 CUSTOMER, 2 ADMIN, 10 USER, and 6 AGENT. Emails follow the pattern `demo.<customer|admin|internal|agent><NN>@example.com` with numbering starting at `01` for each role.
+- The database now has 13 CUSTOMER, 3 ADMIN, 10 USER, and 9 AGENT accounts. The new agents have no team assignment yet.
+- Updated the passwords for the 28 new demo accounts at the user's request and verified all 28 hashes. Cleared pending password reset tokens for those accounts. The demo password is kept out of this log.
+
+## Verification 2026-11-18 - Three-account workflow and parallel ticket creation
+
+- Used a temporary schema on local PostgreSQL. In one browser tab, an Internal User created `TK-0001`, an Agent took it and posted public and internal replies, an Admin closed it, and the Internal User signed back in and saw the closed ticket and public reply only.
+- Fixed ticket list and detail counts so requester roles count public comments only. API verification confirmed comment visibility and counts, requester and agent ticket scope, and admin-only user management.
+- Verified an expired access token was rejected and could be renewed. Twelve concurrent ticket creation requests returned distinct, sequential numbers (`TK-0003` to `TK-0014`) with one creation history entry each.
+- Full workspace build passed before browser verification. The API build and integration checks passed after the comment count change. Removed the temporary schema and verified the application schema still had 35 users and 20 tickets.
+
+## Review 2026-11-18 - Production readiness
+
+- Read-only database checks found six notification rows for active agents outside their current ticket scope. Unrouted tickets notify all active agents and the notification feed includes ticket subjects without a fresh ticket visibility check. All five categories currently have no routing team. The category catalog also returns global ticket counts to requester roles.
+- Refresh tokens have no server-side session revocation or single-use rotation. Login and registration have no application-level throttling. The last active admin can be disabled or demoted. Registration/login and password recovery use different email normalization rules.
+- Ticket edits, assignments and comments check permission before the write, allowing assignment changes and stale updates to race. Ticket creation and comment creation commit before notification insertion, so a reported failure followed by a retry can duplicate work.
+- A token refresh in one tab reloads other tabs. Draft text and the internal-note checkbox also persist across ticket IDs on the same detail route. Unassigning an in-progress ticket leaves it outside the Open-only claim workflow. Creating or editing a ticket can leave a recently cached ticket list stale.
+- The dashboard's historical resolution metric still uses the last update and current status. The current web dashboard does not render the returned trends. The project lacks versioned Prisma migrations and a committed regression suite. Production SMTP delivery, deployment controls and recovery from backups were not verified.
+- The full build and Prisma schema validation passed. npm audit reported 1 high and 3 moderate affected production package entries, or 9 high and 3 moderate including development dependencies. These are dependency advisories, not demonstrations of exploitation. No changes were applied to the application or database during this review.
+
+## Fixes 2026-11-18 - Notification access and account security
+
+- Notifications and unread counts now share the ticket access scope. Tickets without an assignee or team notify admins only. Older notifications are filtered using the recipient's current ticket access.
+- Access tokens now require a live PostgreSQL session. Refresh rotates a single-use token without extending the session's original expiry. Logout revokes that session. Existing users will need to sign in again.
+- PostgreSQL enforces a 15-minute window with 10 login requests per account, 60 login requests per IP, and 10 registrations per IP. Set `TRUSTED_PROXY` to the actual trusted proxy IPs or networks when deploying behind a reverse proxy.
+- The full build and integration checks passed using local PostgreSQL and an isolated schema. Checks covered routing, visibility after a team change, refresh rotation, logout, independent sessions, and login/registration limits.
+- Applied `apps/api/prisma/sql/20261118-auth-hardening.sql` to the local development database. Verified 35 users, 20 tickets and 10 notifications afterward. For an existing database without the new tables, apply this additive SQL before starting the revised API. Fresh databases use the updated Prisma schema.
+
+## Fixes 2026-11-18 - Ticket writes and agent queue
+
+- Ticket creation, edits, assignment, claim, and comments commit with their notification writes in a single transaction. Edits and comments lock the ticket row before checking the assignee. The ticket list refreshes after create, edit, or comment.
+- Unassigning an in-progress ticket reopens it and notifies the relevant queue. The list and detail pages also allow claiming older unassigned in-progress tickets in the agent's team.
+- Mapped Billing to Finance and Technical Support to IT in the local database. Account Management, Feature Request, and General Inquiry remain in admin triage until a team is chosen.
+- Full build passed. Integration checks in a temporary PostgreSQL schema passed for release and reclaim, older unassigned tickets, and complete rollback of ticket creation and comments after a forced notification write failure. A retry saved each operation once.
+
+## Production preparation 2026-11-18 - Initial migration and manual recovery
+
+- Created Prisma migration `20261118123000_initial` for a fresh PostgreSQL database. On the new server, point `DATABASE_URL` at the empty production database, install dependencies with `npm ci --include=dev`, then run `npm run db:deploy` from the repository root. This initializes the schema without creating users or demo tickets. Provision the first production admin separately.
+- The older auth-hardening SQL is for existing databases that predate the new tables. The initial migration already includes those tables. Databases already initialized without a migration history require a baseline before using migrate deploy.
+- Password recovery defaults to manual support. Both password pages direct users to the Call Center or Helpdesk administrator. The API blocks email recovery requests in this mode and production startup works without SMTP. To restore email recovery, set `EMAIL_PASSWORD_RESET_ENABLED=true` and configure SMTP and `PASSWORD_RESET_URL`.
+- Full build passed. On an empty temporary PostgreSQL schema, migrate deploy applied the initial migration, a second run found nothing pending, the schema matched Prisma, and users and tickets remained empty. A production-mode API started without SMTP and correctly blocked both email recovery endpoints.

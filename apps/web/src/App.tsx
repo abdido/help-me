@@ -5,6 +5,7 @@ import { LoginPage } from '@/pages/auth/LoginPage';
 import { RegisterPage } from '@/pages/auth/RegisterPage';
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
+import { PasswordRecovery } from '@/pages/auth/PasswordRecovery';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
 import { TicketListPage } from '@/pages/tickets/TicketListPage';
 import { TicketDetailPage } from '@/pages/tickets/TicketDetailPage';
@@ -19,8 +20,8 @@ export default function App() {
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/forgot-password" element={<PasswordRecovery><ForgotPasswordPage /></PasswordRecovery>} />
+      <Route path="/reset-password" element={<PasswordRecovery><ResetPasswordPage /></PasswordRecovery>} />
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>

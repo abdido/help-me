@@ -17,6 +17,11 @@ export const authService = {
     return res.data.data;
   },
 
+  getPasswordRecovery: async (): Promise<{ emailEnabled: boolean }> => {
+    const res = await api.get<{ data: { emailEnabled: boolean } }>('/auth/password-recovery');
+    return res.data.data;
+  },
+
   requestPasswordReset: async (email: string): Promise<void> => {
     await api.post('/auth/forgot-password', { email });
   },
@@ -25,11 +30,4 @@ export const authService = {
     await api.post('/auth/reset-password', { token, password });
   },
 
-  logout: async (): Promise<void> => {
-    try {
-      await api.post('/auth/logout');
-    } catch {
-      // Ignore — we clear local state anyway
-    }
-  },
 };
