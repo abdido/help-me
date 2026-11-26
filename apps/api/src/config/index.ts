@@ -1,8 +1,10 @@
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '../../.env' });
+const isWorker = process.env.HELPDESK_RUNTIME === 'worker';
+if (!isWorker) dotenv.config({ path: '../../.env' });
 
 export const config = {
+  isWorker,
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -15,6 +17,7 @@ export const config = {
   database: {
     url: process.env.DATABASE_URL || '',
   },
+  publicRegistrationEnabled: process.env.PUBLIC_REGISTRATION_ENABLED !== 'false',
   emailPasswordResetEnabled: process.env.EMAIL_PASSWORD_RESET_ENABLED === 'true',
   smtp: {
     host: process.env.SMTP_HOST || '',
@@ -38,8 +41,11 @@ if (config.nodeEnv === 'production') {
   ) {
     throw new Error('JWT_SECRET must be a unique secret of at least 32 characters in production');
   }
-  if (!config.database.url) {
+  if (!config.isWorker && !config.database.url) {
     throw new Error('DATABASE_URL is required in production');
+  }
+  if (config.isWorker && config.emailPasswordResetEnabled) {
+    throw new Error('Use manual password recovery on the Worker');
   }
   if (config.emailPasswordResetEnabled &&
       (!config.smtp.host || !config.smtp.from || !process.env.PASSWORD_RESET_URL)) {

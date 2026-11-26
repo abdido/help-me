@@ -2,6 +2,9 @@ node_modules/
 dist/
 build/
 .env
+.dev.vars
+.dev.vars.*
+.wrangler/
 *.log
 .DS_Store
 Thumbs.db

@@ -1,8 +1,9 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { readSession, updateSessionTokens, useAuthStore } from '@/stores/auth.store';
+import { apiBaseUrl } from './api-url';
 
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: apiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -36,7 +37,7 @@ function ensureFreshSession(sessionId: string, sentToken?: string) {
     if (session.accessToken !== sentToken) return;
 
     try {
-      const { data } = await axios.post('/api/v1/auth/refresh', { refreshToken: session.refreshToken });
+      const { data } = await axios.post(`${apiBaseUrl}/auth/refresh`, { refreshToken: session.refreshToken });
       if (!updateSessionTokens(sessionId, data.data)) throw sessionChanged();
     } catch (error) {
       if (!navigator.locks && axios.isAxiosError(error) && error.response?.status === 401) {

@@ -1,5 +1,12 @@
 # AI Work Log
 
+## Cloudflare deployment preparation 2026-11-21
+
+- The deployment target is Cloudflare Pages for the web app and Workers for the Express API. PostgreSQL remains the database. The Worker uses a request-scoped Prisma PostgreSQL adapter through the `HYPERDRIVE` binding.
+- Before deploying, replace the placeholder Hyperdrive ID in `wrangler.jsonc` with a configuration that has query caching disabled. Set `FRONTEND_URL` to the Pages origin, and store `JWT_SECRET` as a Worker secret. Run `npm run db:deploy` against the direct PostgreSQL connection.
+- In Pages, build from the repository root using `npm run build -w apps/web`, publish `apps/web/dist`, and set `VITE_API_ORIGIN` to the Worker HTTPS origin.
+- Verified the Worker health and manual-recovery endpoints in Wrangler. An isolated PostgreSQL smoke test also passed registration, ticket creation, and logout through the local Worker. Cloudflare account deployment and remote Hyperdrive validation remain open.
+
 Last updated: 2026-11-15 (Asia/Makassar)
 
 Read this file before continuing work in this repository. Add a dated entry here when you make or verify meaningful changes so Claude, Codex, and other contributors can hand work off safely.

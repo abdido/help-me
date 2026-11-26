@@ -1,0 +1,8 @@
+.gcloudignore
+.git
+#!include:.gitignore
+**/.env*
+**/*.dump
+**/*.pem
+**/*.key
+ai_log.md

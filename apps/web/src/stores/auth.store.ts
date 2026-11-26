@@ -2,6 +2,7 @@ import toast from 'react-hot-toast';
 import { create } from 'zustand';
 import type { User } from '@helpdesk/shared';
 import { queryClient } from '../services/queryClient';
+import { apiBaseUrl } from '../services/api-url';
 
 const storageKey = 'helpdesk-session';
 
@@ -69,7 +70,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (!session) return;
 
     try {
-      const response = await fetch('/api/v1/auth/logout', {
+      const response = await fetch(`${apiBaseUrl}/auth/logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: session.refreshToken }),

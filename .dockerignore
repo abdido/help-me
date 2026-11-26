@@ -1,0 +1,9 @@
+.git
+**/.env*
+**/node_modules
+**/dist
+**/*.log
+**/*.dump
+**/*.pem
+**/*.key
+ai_log.md

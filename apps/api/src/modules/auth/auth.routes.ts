@@ -37,7 +37,9 @@ function requireEmailPasswordReset(_req: Request, res: Response, next: NextFunct
   sendError(res, 'Hubungi Call Center atau admin untuk mengatur ulang kata sandi.', 403);
 }
 
-router.post('/register', limitRegistration, asyncHandler(AuthController.register));
+if (config.publicRegistrationEnabled) {
+  router.post('/register', limitRegistration, asyncHandler(AuthController.register));
+}
 router.post('/login', limitLogin, asyncHandler(AuthController.login));
 router.post('/refresh', asyncHandler(AuthController.refresh));
 router.post('/logout', asyncHandler(AuthController.logout));

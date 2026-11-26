@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
+import { isIP } from 'node:net';
 import { Request } from 'express';
+import { config } from '../../config';
 import prisma from '../../lib/prisma';
 import { asyncHandler } from '../../utils/asyncHandler';
 
@@ -8,7 +10,11 @@ let nextCleanup = 0;
 
 type Rule = { scope: string; limit: number; identifier: (req: Request) => string | undefined };
 
-const clientIp = (req: Request) => req.ip || req.socket.remoteAddress || 'unknown';
+function clientIp(req: Request) {
+  const cloudflareIp = config.isWorker ? req.get('CF-Connecting-IP') : undefined;
+  if (cloudflareIp && isIP(cloudflareIp)) return cloudflareIp;
+  return req.ip || req.socket.remoteAddress || 'unknown';
+}
 
 function limitRequests(...rules: Rule[]) {
   return asyncHandler(async (req, res, next) => {

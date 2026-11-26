@@ -1,10 +1,6 @@
-import { PrismaClient, UserRole, TicketStatus, TicketPriority, TicketSource } from '@prisma/helpdesk-password-client';
+import { UserRole, TicketStatus, TicketPriority, TicketSource } from '@prisma/helpdesk-password-client';
 import bcrypt from 'bcryptjs';
-import dotenv from 'dotenv';
-
-dotenv.config({ path: '../../.env' });
-
-const prisma = new PrismaClient();
+import prisma from '../src/lib/prisma';
 
 async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);

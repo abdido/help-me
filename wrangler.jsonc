@@ -1,0 +1,23 @@
+{
+  "name": "helpdesk-api",
+  "main": "apps/api/worker.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "build": { "command": "npm run build:worker-express" },
+  // Keep Express on its Node package paths, not browser shims.
+  "alias": { "express": "./.wrangler/express.cjs" },
+  "upload_source_maps": true,
+  "vars": {
+    "NODE_ENV": "production",
+    "HELPDESK_RUNTIME": "worker",
+    "PUBLIC_REGISTRATION_ENABLED": "false",
+    "EMAIL_PASSWORD_RESET_ENABLED": "false",
+    "FRONTEND_URL": "https://helpme.houseofabdi.web.id"
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "e12b56a8a0074ed8b2e65c7b4ed97b4b"
+    }
+  ]
+}
